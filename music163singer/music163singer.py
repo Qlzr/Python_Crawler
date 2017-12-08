@@ -3,52 +3,62 @@ import requests
 from bs4 import BeautifulSoup
 import json
 
-def get_albums_id(singer_id):
+#获取歌手所有的专辑号，以列表的形式返回
+def get_albums_id(singer_id): 
     url = 'http://music.163.com/artist/album?id=' + str(singer_id)
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0'}
-    r = requests.get(url, headers=headers)
-    soup = BeautifulSoup(r.text, 'lxml')
-    page_num = len(soup.find(class_='u-page').find_all('a'))-2
-    albums_id = []
-    for offset in range(0, 12*page_num, 12):
-        url = 'http://music.163.com/artist/album?id=' + str(singer_id) + '&limit=12&offset=' + str(offset)
+    try:
         r = requests.get(url, headers=headers)
         soup = BeautifulSoup(r.text, 'lxml')
-        albums = soup.find(id="m-song-module").find_all('li')
-        for album in albums:
-            album_href = album.find(class_='msk')['href']
-            albums_id.append(album_href.replace('/album?id=', ''))
-    print('专辑id爬取完毕！')
-    return albums_id
+        page_num = len(soup.find(class_='u-page').find_all('a'))-2
+        albums_id = []
+        for offset in range(0, 12*page_num, 12):
+            url = 'http://music.163.com/artist/album?id=' + str(singer_id) + '&limit=12&offset=' + str(offset)
+            r = requests.get(url, headers=headers)
+            soup = BeautifulSoup(r.text, 'lxml')
+            albums = soup.find(id="m-song-module").find_all('li')
+            for album in albums:
+                album_href = album.find(class_='msk')['href']
+                albums_id.append(album_href.replace('/album?id=', ''))
+        print('专辑id爬取完毕！')
+        return albums_id
+    except Exception as e:
+        print(e)
+        return None
         
-        
+#通过专辑号获取歌手所有的歌曲信息，包括歌曲号、歌名、专辑id、专辑名、发行时间、发行公司
 def get_songs_id(albums_id):
     songs_info = []
     for album_id in albums_id:
         url = 'http://music.163.com/album?id=' + album_id
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0'}
-        r = requests.get(url, headers=headers)
-        soup = BeautifulSoup(r.text, 'lxml')
-        release_info = soup.find_all(class_='intr')
-        release_time = release_info[1].get_text().split('：')[1]
-        if len(release_info) == 3:
-            release_company = release_info[2].get_text().split('：')[1].strip()
-        else:
-            release_company = '个人'
-        songs_a = soup.find('ul', class_='f-hide').find_all('a')
-        album_name = soup.find(class_='f-ff2').get_text()
-        for song_a in songs_a:
-            song_dict = {}
-            song_dict['歌曲id'] = song_a['href'].replace('/song?id=', '')
-            song_dict['歌曲名'] = song_a.get_text()
-            song_dict['专辑id'] = album_id
-            song_dict['专辑名'] = album_name
-            song_dict['发行时间'] = release_time
-            song_dict['发行公司'] = release_company
-            songs_info.append(song_dict)
+        try:
+            r = requests.get(url, headers=headers)
+            soup = BeautifulSoup(r.text, 'lxml')
+            release_info = soup.find_all(class_='intr')
+            release_time = release_info[1].get_text().split('：')[1]
+            if len(release_info) == 3:
+                release_company = release_info[2].get_text().split('：')[1].strip()
+            else:
+                release_company = '个人'
+            songs_a = soup.find('ul', class_='f-hide').find_all('a')
+            album_name = soup.find(class_='f-ff2').get_text()
+            for song_a in songs_a:
+                song_dict = {}
+                song_dict['歌曲id'] = song_a['href'].replace('/song?id=', '')
+                song_dict['歌曲名'] = song_a.get_text()
+                song_dict['专辑id'] = album_id
+                song_dict['专辑名'] = album_name
+                song_dict['发行时间'] = release_time
+                song_dict['发行公司'] = release_company
+                songs_info.append(song_dict)
+        except Exception as e:
+            print("专辑：" + str(album_id) + "爬取失败")
+            print(e)
     print('歌曲信息爬取完毕！')
     return songs_info
-    
+
+#获取每一首歌的评论数
 def get_evalute_num(songs_info):
     headers = {
             'Host': 'music.163.com',
@@ -71,13 +81,17 @@ def get_evalute_num(songs_info):
     for song_info in songs_info:
         headers['Referer'] = 'http://music.163.com/song?id=' + song_info['歌曲id']
         url = 'http://music.163.com/weapi/v1/resource/comments/R_SO_4_' + song_info['歌曲id']
-        r = requests.post(url, headers=headers, params=params, data=data)
-        evalute_num = r.json()['total']
-        song_info['评论数'] = evalute_num
+        try:
+            r = requests.post(url, headers=headers, params=params, data=data)
+            evalute_num = r.json()['total']
+            song_info['评论数'] = evalute_num
+        except Exception as e:
+            print(song_info['歌曲名'] + "评论数爬取失败")
+            print(e)
     print('评论数爬取完毕!')
     return songs_info
     
-    
+#将获取的信息以JSON格式存储在本地  
 def save_result(result):
     with open('data.json', 'w', encoding='utf-8') as file:
         file.write(json.dumps(result, indent=2, ensure_ascii=False))
@@ -86,6 +100,12 @@ def save_result(result):
 if __name__=='__main__':
     singer_id = 3684
     albums_id = get_albums_id(singer_id)
-    songs_info = get_songs_id(albums_id)
-    result = get_evalute_num(songs_info)
-    save_result(result)
+    if albums_id is not None:
+        songs_info = get_songs_id(albums_id)
+        if len(songs_info) > 0:
+            result = get_evalute_num(songs_info)
+            save_result(result)
+        else:
+            print("没有获取到任何歌曲信息")
+    else:
+        print("专辑号爬取失败")
