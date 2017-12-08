@@ -9,8 +9,9 @@ def get_html(url):  #爬取每一页HTML页面的源代码
         response = requests.get(url, headers=headers)
         html = response.text
         return html
-    except:
-        print("豆瓣电影top250第" + str((int(offset) + 25) / 25) + "页爬取失败")
+    except Exception as e:
+        print(e)
+        return None
     
 def parser_html(html):   #对爬取到的HTML页面进行解析并获取信息
     soup = BeautifulSoup(html, 'lxml')
@@ -44,7 +45,7 @@ def parser_html(html):   #对爬取到的HTML页面进行解析并获取信息
         item_dict["语录"] = quote
         
         movie_info.append(item_dict)
-    print("豆瓣电影top250第" + str(int(offset+25) / 25) + "页完成爬取")
+    print("豆瓣电影top250第" + str((offset+25) / 25) + "页完成爬取")
     return movie_info
 
 def save_file(movie_info):  #存储获取到的信息
@@ -61,5 +62,8 @@ if __name__ == '__main__':
     for offset in range(0, 250, 25):
         url = 'https://movie.douban.com/top250?start=' + str(offset) + '&filter='
         html = get_html(url)
-        movie_info = movie_info + parser_html(html)
+        if html is not None:
+            movie_info = movie_info + parser_html(html)
+        else:
+            print("豆瓣电影top250第" + str((offset + 25) / 25) + "页爬取失败")
     save_file(movie_info)
