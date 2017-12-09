@@ -1,2 +1,2 @@
-# Spider_projects
-爬虫练习
+# Python_Crawler
+Python爬虫脚本
