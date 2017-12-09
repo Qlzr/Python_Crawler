@@ -9,6 +9,8 @@ def get_albums_id(singer_id):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0'}
     try:
         r = requests.get(url, headers=headers)
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding
         soup = BeautifulSoup(r.text, 'lxml')
         page_num = len(soup.find(class_='u-page').find_all('a'))-2
         albums_id = []
@@ -34,6 +36,8 @@ def get_songs_id(albums_id):
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0'}
         try:
             r = requests.get(url, headers=headers)
+            r.raise_for_status()
+            r.encoding = r.apparent_encoding
             soup = BeautifulSoup(r.text, 'lxml')
             release_info = soup.find_all(class_='intr')
             release_time = release_info[1].get_text().split('：')[1]
@@ -83,6 +87,7 @@ def get_evalute_num(songs_info):
         url = 'http://music.163.com/weapi/v1/resource/comments/R_SO_4_' + song_info['歌曲id']
         try:
             r = requests.post(url, headers=headers, params=params, data=data)
+            r.raise_for_status()
             evalute_num = r.json()['total']
             song_info['评论数'] = evalute_num
         except Exception as e:
