@@ -7,6 +7,8 @@ Created on Tue Dec 12 10:10:46 2017
 
 import requests
 from lxml import etree
+import threading  #多线程处理与控制
+import time
 
 base_url = 'http://www.xicidaili.com/wt/'
 headers = {
@@ -32,45 +34,50 @@ def html_parser(html):
     return result
 
 #测试代理，并将可用的代理以列表的形式返回
-def get_use_proxy(results):
-    good_ip = []
-    for ip in results:
-        proxies = {'http': ip}
-        try:
-            print('正在测试代理ip：' + ip)
-            r = requests.get('http://www.baidu.com', proxies=proxies, timeout=3)
-            if r.status_code == 200:
-                print('代理ip：' + ip + '有效可用')
-                good_ip.append(ip)
-        except:
-            continue
-    return good_ip
+def get_use_proxy(ip):
+    proxies = {'http': ip}
+    try:
+        print('正在测试代理ip：' + ip +'\n')
+        r = requests.get('http://www.baidu.com', proxies=proxies, timeout=3)
+        if r.status_code == 200:
+            print('代理ip：' + ip + '有效可用' + '\n')
+            save_good_ip(ip) #将测试有效可用的代理ip写入txt文本中
+    except:
+        pass
 
+#启动多线程测试ip地址的可用性
+def start_test_ip(results):
+    for ip in results:
+        th=threading.Thread(target=get_use_proxy,args=(ip,))
+        th.start() #启动线程
+    
 #将爬取到的代理ip写入txt文本中
 def save_all_ip(all_ip):
     with open('all_ip.txt', 'w') as file:
         for ip in all_ip:
             file.write(ip + '\n')
         print('代理ip写入完毕!')
+    #先清空上一次爬取后的可用ip
+    with open('good_ip.txt', 'w') as f:
+        f.write('')
 
 
-#将可用的代理ip写入txt文本中
-def save_good_ip(good_ip):
-    with open('good_ip.txt', 'w') as file:
-        for ip in good_ip:
-            file.write(ip + '\n')
-        print('可用代理ip写入完毕!')
+#将可用的代理ip以追加的形式写入txt文本中
+def save_good_ip(ip):
+    with open('good_ip.txt', 'a') as file:
+        file.write(ip + '\n')
  
     
 if __name__ == '__main__':
     results = []
-    page = 2 #爬取的页数
+    page = 6 #爬取的页数
     for i in range(0, page):
         url = base_url + str(i+1)
         html = get_html(url)
         result = html_parser(html)
         results.extend(result)
     save_all_ip(results)
-    good_ip = get_use_proxy(results)
-    save_good_ip(good_ip)
+    start_test_ip(results)
+    time.sleep(2)
+    print("可用ip存储完毕！")
     
