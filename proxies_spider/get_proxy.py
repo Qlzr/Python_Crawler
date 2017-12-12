@@ -46,9 +46,10 @@ def get_use_proxy(results):
             continue
     return good_ip
 
+#将爬取到的代理ip写入txt文本中
 def save_all_ip(all_ip):
     with open('all_ip.txt', 'w') as file:
-        for ip in good_ip:
+        for ip in all_ip:
             file.write(ip + '\n')
         print('代理ip写入完毕!')
 
