@@ -54,8 +54,8 @@ def get_albums_id(singer_id):
                 for album in albums:
                     album_href = album.find(class_='msk')['href']
                     albums_id.append(album_href.replace('/album?id=', ''))
-                print('专辑id爬取完毕！')
-                return albums_id
+            print('专辑id爬取完毕！')
+            return albums_id
     except Exception as e:
         print(e)
         return None
