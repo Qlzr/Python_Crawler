@@ -12,18 +12,28 @@ def get_albums_id(singer_id):
         r.raise_for_status()
         r.encoding = r.apparent_encoding
         soup = BeautifulSoup(r.text, 'lxml')
-        page_num = len(soup.find(class_='u-page').find_all('a'))-2
-        albums_id = []
-        for offset in range(0, 12*page_num, 12):
-            url = 'http://music.163.com/artist/album?id=' + str(singer_id) + '&limit=12&offset=' + str(offset)
-            r = requests.get(url, headers=headers)
-            soup = BeautifulSoup(r.text, 'lxml')
+        page = soup.find(class_='u-page')
+        if page is None:
+            albums_id = []
             albums = soup.find(id="m-song-module").find_all('li')
             for album in albums:
                 album_href = album.find(class_='msk')['href']
                 albums_id.append(album_href.replace('/album?id=', ''))
-        print('专辑id爬取完毕！')
-        return albums_id
+            print('专辑id爬取完毕！')
+            return albums_id
+        else:
+            page_num = len(page.find_all('a'))-2
+            albums_id = []
+            for offset in range(0, 12*page_num, 12):
+                url = 'http://music.163.com/artist/album?id=' + str(singer_id) + '&limit=12&offset=' + str(offset)
+                r = requests.get(url, headers=headers)
+                soup = BeautifulSoup(r.text, 'lxml')
+                albums = soup.find(id="m-song-module").find_all('li')
+                for album in albums:
+                    album_href = album.find(class_='msk')['href']
+                    albums_id.append(album_href.replace('/album?id=', ''))
+                print('专辑id爬取完毕！')
+                return albums_id
     except Exception as e:
         print(e)
         return None
