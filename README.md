@@ -7,3 +7,5 @@
 网易云音乐爬虫：[music163](https://github.com/Qlzr/Python_Crawler/tree/master/music163)
 
 西刺代理爬虫：[proxies_spider](https://github.com/Qlzr/Python_Crawler/tree/master/proxies_spider)
+
+当当网爬虫：[Scrapy_spider/dangdang_spider](https://github.com/Qlzr/Python_Crawler/tree/master/Scrapy_spider/dangdang_spider)
