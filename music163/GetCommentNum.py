@@ -40,11 +40,15 @@ class Get_comment_num:
         
         try:
             r = requests.post(url, headers=headers, params=params, data=data, proxies=proxies, timeout=3)
-            r.raise_for_status()
-            comment_num = r.json()['total']  #请求的响应结果是json文件
-            SaveData.save_comment_num(comment_num, self.song_id)  #调用函数，将评论数保存到数据表song_info中
-            print('歌曲id为' + self.song_id + '的评论数爬取成功！')
-            return 1
+            if r.status_code == 404:
+                print('歌曲id为' + self.song_id + '的评论数不存在！')
+                return -1
+            else:
+                r.raise_for_status()
+                comment_num = r.json()['total']  #请求的响应结果是json文件
+                SaveData.save_comment_num(comment_num, self.song_id)  #调用函数，将评论数保存到数据表song_info中
+                print('歌曲id为' + self.song_id + '的评论数爬取成功！')
+                return 1
         except:
             print('歌曲id为' + self.song_id + '的评论数爬取失败！')
             print('正在重爬')

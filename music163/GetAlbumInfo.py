@@ -25,38 +25,41 @@ class Get_album_and_aongs:
         proxies = {'http': ip}
         try:
             r = requests.get(url, headers=headers, proxies=proxies, timeout=3) #请求一张专辑的歌曲列表页面
-            r.raise_for_status()
-            html = etree.HTML(r.text)
+            if r.status_code == 404:
+                return -1
+            else:
+                r.raise_for_status()
+                html = etree.HTML(r.text)
             
-            '''解析获取专辑信息，包括专辑号、专辑名、歌手号、歌手名、发行时间和发行单位'''
-            album_info = {} 
-            album_info['album_id'] = self.album_id
-            album_info['album_name'] = html.xpath("//h2[@class='f-ff2']/text()")
-            album_info['singer_id'] = html.xpath("//p[@class='intr']//a/@href")[0].replace('/artist?id=', '')
-            album_info['singer_name'] = html.xpath("//p[@class='intr']//a/text()")
-            album_info['release_time'] = html.xpath("//p[@class='intr']/text()")[0]
-            if len(html.xpath("//p[@class='intr']/text()")) > 1:
-                album_info['release_company'] = html.xpath("//p[@class='intr']/text()")[1].strip()
-            else:    
-                album_info['release_company'] = '无'  #有些专辑没有标明发行单位，此类统统用‘无’表示
+                '''解析获取专辑信息，包括专辑号、专辑名、歌手号、歌手名、发行时间和发行单位'''
+                album_info = {} 
+                album_info['album_id'] = self.album_id
+                album_info['album_name'] = html.xpath("//h2[@class='f-ff2']/text()")
+                album_info['singer_id'] = html.xpath("//p[@class='intr']//a/@href")[0].replace('/artist?id=', '')
+                album_info['singer_name'] = html.xpath("//p[@class='intr']//a/text()")
+                album_info['release_time'] = html.xpath("//p[@class='intr']/text()")[0]
+                if len(html.xpath("//p[@class='intr']/text()")) > 1:
+                    album_info['release_company'] = html.xpath("//p[@class='intr']/text()")[1].strip()
+                else:    
+                    album_info['release_company'] = '无'  #有些专辑没有标明发行单位，此类统统用‘无’表示
             
-            '''解析获取一张专辑的所有歌曲信息'''    
-            songs_info = [] 
-            for i in range(len(html.xpath("//ul[@class='f-hide']/li"))):
-                '''解析获取一首歌的信息，包括歌曲号、歌曲名、所属专辑号、所属专辑名'''
-                song_info = {}  
-                song_info['song_id'] = html.xpath("//ul[@class='f-hide']/li/a/@href")[i].replace('/song?id=', '')
-                song_info['song_name'] = html.xpath("//ul[@class='f-hide']/li/a/text()")[i]
-                song_info['album_id'] = album_info['album_id']
-                song_info['album_name'] = album_info['album_name']
-                songs_info.append(song_info)
+                '''解析获取一张专辑的所有歌曲信息'''    
+                songs_info = [] 
+                for i in range(len(html.xpath("//ul[@class='f-hide']/li"))):
+                    '''解析获取一首歌的信息，包括歌曲号、歌曲名、所属专辑号、所属专辑名'''
+                    song_info = {}  
+                    song_info['song_id'] = html.xpath("//ul[@class='f-hide']/li/a/@href")[i].replace('/song?id=', '')
+                    song_info['song_name'] = html.xpath("//ul[@class='f-hide']/li/a/text()")[i]
+                    song_info['album_id'] = album_info['album_id']
+                    song_info['album_name'] = album_info['album_name']
+                    songs_info.append(song_info)
             
-            '''调用函数，保存专辑信息和歌曲信息到数据库'''
-            SaveData.save_album_info(album_info)
-            SaveData.save_songs_info(songs_info)
+                '''调用函数，保存专辑信息和歌曲信息到数据库'''
+                SaveData.save_album_info(album_info)
+                SaveData.save_songs_info(songs_info)
             
-            print("专辑id为"+ self.album_id +"的信息获取完毕")
-            return 1
+                print("专辑id为"+ self.album_id +"的信息获取完毕")
+                return 1
         except:
             print("专辑id为"+ self.album_id +"的信息获取失败")
             print("正在重新获取")
