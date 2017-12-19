@@ -13,19 +13,12 @@ from GetCommentNum import Get_comment_num
 import SaveData
 
 
-def all_singer_ids():
+def all_singer_ids(url):
     '''
-    构建歌手页面的url,爬取所有华语男歌手的id号
-    也可以将url中的id=1001换成其他的，比如修改成id=2001以爬取所有欧美男歌手id
-    或者构建歌手页面的所有url爬取网易云音乐上所有歌手的id
+    爬取一个页面的歌手id
     '''
-    urls =[]
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0'}
-    for i in range(65, 91):
-        url = 'http://music.163.com/discover/artist/cat?id=1001&initial=' + str(i)
-        urls.append(url)
-    urls.append('http://music.163.com/discover/artist/cat?id=1001&initial=0')
-    singer = Get_singer_id(urls, headers)
+    singer = Get_singer_id(url, headers)
     singer_ids = singer.get_singer_ids()
     return singer_ids
 
@@ -33,19 +26,11 @@ def all_singer_ids():
 def all_album_ids(singer_ids):
     '''
     通过歌手id获取歌手的所有专辑号，
-    并且每爬取200个歌手的专辑号就更新一次代理ip池
+    爬取一个歌手页面的所有歌手的专辑号就更新一次代理ip池
     '''
-    album_ids = []
-    lenth = int(len(singer_ids) / 200)
-    for i in range(lenth):
-        proxy_pool = get_proxy_pool()
-        album = Get_album_id(singer_ids[i*200: (i+1)*200], proxy_pool)
-        album_id = album.get_album_ids()
-        album_ids.extend(album_id)
     proxy_pool = get_proxy_pool()
-    album = Get_album_id(singer_ids[lenth*200:], proxy_pool)
-    album_id = album.get_album_ids()
-    album_ids.extend(album_id)
+    album = Get_album_id(singer_ids, proxy_pool)
+    album_ids = album.get_album_ids()
     return album_ids
 
 
@@ -108,12 +93,26 @@ def get_proxy_pool():
 
 
 if __name__ =='__main__':
-    singer_ids = all_singer_ids() #获取所有歌手的id
-    album_ids = all_album_ids(singer_ids) #获取所有歌手的所有专辑号
-    all_albums_and_songs(album_ids) #获取专辑页面，存储专辑信息和歌曲信息
-    all_comment_num()  #获取歌曲的评论数
-    SaveData.close_db() #关闭数据库连接
-    print("爬取结束！")
+    
+    '''
+    构建歌手页面的url,爬取所有华语男歌手的id号
+    也可以将url中的id=1001换成其他的，比如修改成id=2001以爬取所有欧美男歌手id
+    或者构建歌手页面的所有url爬取网易云音乐上所有歌手的id
+    '''
+    urls = []
+    for i in range(65, 91):
+        url = 'http://music.163.com/discover/artist/cat?id=1001&initial=' + str(i)
+        urls.append(url)
+    urls.append('http://music.163.com/discover/artist/cat?id=1001&initial=0')
+    
+    for url in urls:
+        singer_ids = all_singer_ids(url) #获取歌手的id
+        album_ids = all_album_ids(singer_ids) #获取歌手的所有专辑号
+        all_albums_and_songs(album_ids) #获取专辑页面，存储专辑信息和歌曲信息
+        all_comment_num()  #获取歌曲的评论数
+        SaveData.close_db() #关闭数据库连接
+        print('歌手页面 '+ url +'信息爬取完毕！')
+    print("爬虫结束！")
     
     
     

@@ -40,10 +40,10 @@ def save_songs_info(songs_info):
         
 def get_song_ids():
     '''
-    查询song_info表中所有歌曲号，以列表的形式返回
+    查询song_info表中所有评论数为空的歌曲号，以列表的形式返回
     '''
     sql = """
-        SELECT song_id FROM song_info    
+        SELECT song_id FROM song_info WHERE comment_num IS NULL  
         """
     try:
         cursor.execute(sql)
